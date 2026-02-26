@@ -1124,7 +1124,7 @@ def find_mat_file():
     """查找当前目录下的.mat文件，返回第一个找到的文件名"""
     mat_files = glob.glob("*.mat")
     if mat_files:
-        return mat_files[0]
+        return mat_files[1]
     return None
 
 # 主应用程序
