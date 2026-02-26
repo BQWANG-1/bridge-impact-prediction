@@ -352,19 +352,7 @@ def main():
         if st.button("📂 Load Data", use_container_width=True):
             with st.spinner("Loading data..."):
                 try:
-                    dataset = HybridBridgeImpactDataset(data_path, normalize=True)
-            
-                    # 添加这两行关键的修复代码！
-                    # 确保response_data是2维数组
-                    if 'response_data' in dataset and dataset['response_data'].ndim == 0:
-                        dataset['response_data'] = dataset['response_data'].reshape(1, -1)
-            
-                    # 确保force_data是2维数组  
-                    if 'force_data' in dataset and dataset['force_data'].ndim == 0:
-                        dataset['force_data'] = dataset['force_data'].reshape(1, -1)
-            
-
-                    
+                    dataset = HybridBridgeImpactDataset(data_path, normalize=True)  
                     st.session_state.dataset = dataset
                     st.session_state.data_loaded = True
                     st.success(f"Data loaded successfully! {dataset.n_samples} sample in total")
