@@ -790,7 +790,6 @@
 
 
 
-
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -804,7 +803,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from sklearn.metrics import mean_squared_error
-import os  # MODIFIED: 添加 os 和 glob 用于文件查找
+import os
 import glob
 
 warnings.filterwarnings('ignore')
@@ -821,7 +820,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 设置matplotlib字体 - 改回Times New Roman
+# 设置matplotlib字体
 plt.rcParams.update({
     'font.family': 'Times New Roman',
     'font.size': 10,
@@ -838,6 +837,17 @@ class HybridBridgeImpactDataset(Dataset):
         # 加载数据
         data = sio.loadmat(mat_path)
         
+        # FIXED: 安全提取 sampling_rate
+        rate_arr = data['sampling_rate']
+        if isinstance(rate_arr, np.ndarray):
+            if rate_arr.size == 1:
+                self.sampling_rate = float(rate_arr.item())
+            else:
+                # 如果数组有多个元素，取第一个（假设只有单个值）
+                self.sampling_rate = float(rate_arr.flatten()[0])
+        else:
+            self.sampling_rate = float(rate_arr)
+        
         # 获取数据 
         # 注意：新数据集vehicle_and_bridge_collision_dataset.mat只有1条样本
         self.force_data = data['force_data']  # (1, 601)
@@ -846,7 +856,6 @@ class HybridBridgeImpactDataset(Dataset):
         self.force_fft_imag = data['force_fft_imag']  # (1, 150)
         self.freq_vector = data['freq_vector']  # (1, 150)
         self.time_vector = data['time_vector']  # (1, 601)
-        self.sampling_rate = float(data['sampling_rate'])
         
         # 转换为numpy数组（与训练代码一致）
         self.force_data = np.array(self.force_data)
@@ -856,7 +865,7 @@ class HybridBridgeImpactDataset(Dataset):
         self.freq_vector = np.array(self.freq_vector)
         self.time_vector = np.array(self.time_vector)
 
-        # MODIFIED: 确保关键数组至少是2维（样本数×特征数）
+        # 确保关键数组至少是2维（样本数×特征数）
         if self.force_data.ndim == 0:
             self.force_data = np.array([[self.force_data.item()]])
         elif self.force_data.ndim == 1:
@@ -1119,12 +1128,11 @@ if 'response_zoom' not in st.session_state:
 if 'impact_zoom' not in st.session_state:
     st.session_state.impact_zoom = 1.0
 
-# MODIFIED: 添加文件查找辅助函数
 def find_mat_file():
     """查找当前目录下的.mat文件，返回第一个找到的文件名"""
     mat_files = glob.glob("*.mat")
     if mat_files:
-        return mat_files[1]
+        return mat_files[0]
     return None
 
 # 主应用程序
@@ -1181,7 +1189,7 @@ def main():
         
         # 数据加载部分
         st.subheader("1. Load Data")
-        # MODIFIED: 自动检测数据文件
+        # 自动检测数据文件
         default_file = find_mat_file()
         if default_file:
             st.success(f"Detected data file: {default_file}")
@@ -1193,7 +1201,7 @@ def main():
         if st.button("📂 Load Data", use_container_width=True):
             with st.spinner("Loading data..."):
                 try:
-                    # MODIFIED: 检查文件是否存在
+                    # 检查文件是否存在
                     if not os.path.exists(data_path):
                         st.error(f"File not found: {data_path}")
                         st.info("Current directory contents: " + ", ".join(os.listdir('.')))
@@ -1205,7 +1213,6 @@ def main():
                     st.success(f"Data loaded successfully! {dataset.n_samples} sample in total")
                 except Exception as e:
                     st.error(f"Failed to load data: {str(e)}")
-                    # MODIFIED: 显示更多调试信息
                     import traceback
                     st.code(traceback.format_exc())
         
@@ -1627,6 +1634,25 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
